@@ -1,6 +1,37 @@
 import streamlit as st
+import json
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 
-def render_chat_ui():
+class DisplayResultStreamlit:
+    def __init__(self,objective, graph,user_message):
+        self.objective = objective
+        self.graph = graph
+        self.user_message = user_message
+
+    def display_result_on_ui(self):
+        objective = self.objective
+        graph = self.graph
+        user_message = self.user_message
+        print(user_message)
+
+        if objective:
+            # Prepare state and invoke the graph
+            initial_state = {"messages": [user_message]}
+            res = graph.invoke(initial_state)
+            for message in res['messages']:
+                if type(message) == HumanMessage:
+                    with st.chat_message("user"):
+                        st.write(message.content)
+                elif type(message)==ToolMessage:
+                    with st.chat_message("ai"):
+                        st.write("Tool Call Start")
+                        st.write(message.content)
+                        st.write("Tool Call End")
+                elif type(message)==AIMessage and message.content:
+                    with st.chat_message("assistant"):
+                        st.write(message.content)
+
+def render_chat_ui(objective):
     """Render the main chat interface."""
     # st.subheader("Chat with your AI Tutor")
     
@@ -106,8 +137,8 @@ def render_chat_ui():
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
     
-    # Chat input at the bottom
-    if prompt := st.chat_input("Ask your question here..."):
+    # Chat input at the bottom with a unique key
+    if prompt := st.chat_input("Ask your question here...", key="main_chat_input"):
         # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
         
@@ -115,12 +146,56 @@ def render_chat_ui():
         with st.chat_message("user"):
             st.markdown(prompt)
         
-        # Simulate AI response (placeholder)
-        with st.chat_message("assistant"):
-            response = "I'm your AI tutor. I'll help you with your studies!"
-            st.markdown(response)
-        
-        # Add assistant response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        
-        # No need for rerun - Streamlit will automatically rerun with the updated session state
+        # Process with graph if available
+        if st.session_state.graph_builder is not None:
+            # Create HumanMessage for the graph
+            user_message = HumanMessage(content=prompt)
+            
+            # Set up initial state and invoke the graph
+            try:
+                initial_state = {"messages": [user_message]}
+                # The compiled graph has the invoke method, not the GraphBuilder object
+                res = st.session_state.graph_builder.invoke(initial_state)
+                
+                # Process the response messages
+                for message in res.get('messages', []):
+                    if isinstance(message, HumanMessage):
+                        # Skip displaying the user message again
+                        continue
+                    elif isinstance(message, ToolMessage):
+                        with st.chat_message("tool"):
+                            st.write("Tool Call:")
+                            st.write(message.content)
+                    elif isinstance(message, AIMessage) and message.content:
+                        with st.chat_message("assistant"):
+                            st.write(message.content)
+                            
+                        # Add assistant response to chat history
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": message.content
+                        })
+            except Exception as e:
+                st.error(f"Error processing your request: {str(e)}")
+                # Add error message to chat history
+                error_message = f"I encountered an error: {str(e)}"
+                if "invoke" in str(e):
+                    error_message += "\nThe graph may not be properly compiled. Please reload the application."
+                    # Reset the graph builder so it can be rebuilt on next run
+                    st.session_state.graph_builder = None
+                
+                st.session_state.messages.append({
+                    "role": "assistant", 
+                    "content": error_message
+                })
+        else:
+            # If graph isn't available, show a placeholder response
+            with st.chat_message("assistant"):
+                response = "I'm setting up your AI tutor. Please make sure you've selected the right options in the sidebar."
+                st.markdown(response)
+                
+                # Add placeholder response to chat history
+                st.session_state.messages.append({
+                    "role": "assistant", 
+                    "content": response
+                })

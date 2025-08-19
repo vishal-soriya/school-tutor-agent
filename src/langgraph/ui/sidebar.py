@@ -44,7 +44,7 @@ def render_sidebar(config):
         start_button = st.button("Start Learning", type="primary")
         
         return {
-            "model": model,
+            "selected_groq_model": model,
             "objective": objective,
             "subject": subject,
             "chapter": chapter,

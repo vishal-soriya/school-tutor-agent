@@ -69,4 +69,6 @@ class StreamlitApp():
         self.user_controls.update(sidebar_state)
         print(f"Updated user controls: {self.user_controls}")
 
-        render_chat_ui()
+        # render_chat_ui()
+
+        return self.user_controls
