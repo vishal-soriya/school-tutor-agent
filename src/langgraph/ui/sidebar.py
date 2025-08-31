@@ -5,6 +5,15 @@ def render_sidebar(config):
     with st.sidebar:
         st.header("Navigation")
         
+        # Navigation section
+        selected_page = st.radio(
+            "Go to",
+            ["Chat", "Study Materials"],
+            horizontal=True
+        )
+        
+        st.divider()
+        
         # Model selection
         model = st.selectbox(
             "Select Model", 
@@ -43,11 +52,17 @@ def render_sidebar(config):
         # Action button
         start_button = st.button("Start Learning", type="primary")
         
+        # Add Weaviate connection info
+        if st.checkbox("Show Vector DB Settings", False):
+            st.text_input("Weaviate Host", value=st.session_state.get("weaviate_host", "localhost"))
+            st.text_input("Weaviate Port", value=st.session_state.get("weaviate_port", "8080"))
+        
         return {
             "selected_groq_model": model,
             "objective": objective,
             "subject": subject,
             "chapter": chapter,
             # "uploaded_file": uploaded_file,
-            "start_button": start_button
+            "start_button": start_button,
+            "selected_page": selected_page
         }

@@ -5,6 +5,7 @@ from .chat import render_chat_ui
 from .study_materials import render_study_materials
 from .progress import render_progress_tracker
 from .pdf_viewer import render_pdf_viewer
+from .pdf_upload import render_pdf_upload_ui
 from .uiconfig import Config
 
 class StreamlitApp():
@@ -13,53 +14,7 @@ class StreamlitApp():
         self.user_controls={}
 
     def load_streamlit_ui(self):
-        # Set page configuration
-        st.set_page_config(
-            page_title="ChapterWise",
-            page_icon="📚",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
-        
-        # Minimal CSS to keep default Streamlit theme while ensuring dark mode
-        st.markdown("""
-            <style>
-            /* Ensure full width and proper spacing */
-            .block-container {
-                padding: 1rem !important;
-                max-width: 100% !important;
-                width: 100% !important;
-            }
-            
-            /* Full width content */
-            .stApp {
-                width: 100% !important;
-                max-width: 100% !important;
-            }
-            
-            /* Radio buttons - no background */
-            .stRadio>div {
-                background-color: transparent !important;
-            }
-            
-            /* Fix for hover states */
-            .stButton>button:hover, .stSelectbox>div>div:hover, .stRadio label:hover {
-                box-shadow: 0 0 5px rgba(255, 255, 255, 0.3) !important;
-            }
-            
-            /* Chat messages container with default styling */
-            .stChatMessageContent {
-                color: white !important;
-            }
-            
-            /* Individual radio options */
-            .stRadio label {
-                transition: all 0.3s !important;
-                padding: 5px !important;
-                border-radius: 4px !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
+        # Page configuration and CSS are now handled in main.py
         
         # Render header
         render_header()
@@ -69,6 +24,13 @@ class StreamlitApp():
         self.user_controls.update(sidebar_state)
         print(f"Updated user controls: {self.user_controls}")
 
-        # render_chat_ui()
+        # Show the selected page
+        selected_page = sidebar_state.get("selected_page", "Chat")
+        
+        if selected_page == "Chat":
+            # No need to render chat here as it's done in main.py
+            pass
+        elif selected_page == "Study Materials":
+            render_pdf_upload_ui()
 
         return self.user_controls
